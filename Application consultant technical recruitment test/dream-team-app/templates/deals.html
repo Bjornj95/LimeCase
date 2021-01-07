@@ -1,0 +1,49 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+	<h1>Last years deals</h1>
+	<br>
+
+	<div class="container">
+		<div class="row">
+		  <div class="col-xl">
+			<div class="jumbotron" style = "height:300px;">
+				<h5 style="text-align:center;">{{items[0].data}}</h5>
+				<hr class="my-4">
+				<h4 style="text-align:center;">{{items[0].value}}</h4>
+			  </div>
+		  </div>
+		  <div class="col-xl">
+			<div class="jumbotron" style = "height:300px;" style = "width:600px;">
+				<h5 style="text-align:center;">{{items[1].data}}</h5>
+				<hr class="my-4">
+				<h4 style="text-align:center;">{{items[1].value}}</h4>
+			  </div>
+		  </div>
+		</div>
+		<div class = "row">
+		  <div class="col-xl">
+			<div class="jumbotron" style = "height:300px;">
+				<h5 style="text-align:center;">{{items[2].data}}</h5>
+				<hr class="my-4">
+				<h4 style="text-align:center;">{{items[2].value}}</h4>
+			  </div>
+		  </div>
+		  <div class="col-xl">
+			<div class="jumbotron" style = "height:300px;">
+				<h5 style="text-align:center;">{{items[3].data}}</h5>
+				<hr class="my-4">
+				<h4 style="text-align:center;">{{items[3].value}}</h4>
+			  </div>
+		  </div>
+		</div>
+
+
+
+
+<!-- 		{% for deal in deals %}
+		<p>{{ deal }}</p>
+		{% endfor %} -->
+
+	
+{% endblock %}

@@ -1,5 +1,7 @@
 {% extends 'layout.html' %}
 
+
+	
 {% block body %}
 	<h1>My example data</h1>
 	<br>
@@ -9,7 +11,7 @@
 		<div class="card">
 		  <img style="width: 200px;">
 		  <div class="card-body">
-		    <h5 class="card-title">Fruit</h5>
+		    <h5 class="card-title">{{ item.fame }}</h5>
 		    <p class="card-text">{{ item.name }}</p>
 		  </div>
 		</div>
@@ -17,4 +19,10 @@
 	</div>
 
 	<br>
+
+	
+
+	<div id="chart_div"></div>
+
+	<script type="text/javascript" src="/dream-team-app/templates/alert.js"></script>
 {% endblock %}

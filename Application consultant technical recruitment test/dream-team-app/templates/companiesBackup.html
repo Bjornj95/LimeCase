@@ -1,0 +1,22 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+	<h1>Companies</h1>
+
+
+	<br>
+
+	<div class="card-group">
+		{% for item in items %}
+		<div class="card">
+		<img style="width: 200px;">
+		<div class="card-body">
+			<h4 class="card-title">{{ item.Title }}</h4>
+			<h6 class="card-text">{{ item.companies }}</h6>
+		</div>
+		</div>
+		{% endfor %}
+	</div>
+
+
+{% endblock %}
