@@ -7,6 +7,7 @@ import json
 
 #my imports 
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -18,7 +19,7 @@ headers = {
         "x-api-key": "860393E332148661C34F8579297ACB000E15F770AC4BD945D5FD745867F590061CAE9599A99075210572"
         }
 
-#Variables
+#Variables (not really used)
 totalValueFromDealsLastYear = 0 
 averageValueFromDealsLastYear = 0
 numberOfDealsLastYear = 0
@@ -29,14 +30,16 @@ def getDealsFromDate(ownDate = False):
     '''
     Calculates total value from deals since date provided (default is last year) and average value of the deals. 
 
-    Returns List of deals, Total, Average, Number of deals
+    Returns List of deals, Total value, Average value, Number of deals
     '''
     if not ownDate: 
-        today = list(str(datetime.date(datetime.now())))
-        today[3] = "0"
-        today = "".join(today)
+        today = str(datetime.date(datetime.now() - relativedelta(years=1)))
+        #today = "2019-01-07"
+    else: 
+        today = ownDate
+
     base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-    params = "?_limit=50&min-closeddate="+str(today)+"T23:59Z"
+    params = "?_limit=50&min-closeddate="+str(today)+"T23:59Z&_sort=closeddate"
     url = base_url + params
     response_deals = get_api_data(headers=headers, url=url)
 
@@ -44,6 +47,8 @@ def getDealsFromDate(ownDate = False):
     for deal in response_deals:
         totalValueFromDealsLastYear += int(deal['value']) 
     averageValue = str(totalValueFromDealsLastYear/len(response_deals))
+
+    print("**In getDealsFromDate** Deals found: ", len(response_deals))
 
 
     return response_deals, totalValueFromDealsLastYear, averageValue,len(response_deals)
@@ -53,17 +58,17 @@ def getAllDeals():
     Returns all deals
     '''
     base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-    params = "?_limit=50"
+    params = "?_limit=50&_sort=-closeddate"
     url = base_url + params
     response_deals = get_api_data(headers=headers, url=url)
 
-    print(len(response_deals), " deals found")
+    print("**In getAllDeals**", len(response_deals), " deals found")
 
     return response_deals
 
 def getCompanyInfo(split = False ): 
     '''
-    Get info about companies, if split is set to True Four lists are returned. one with only companies that bought the last year (customers), one with comapnies that never bought (prospects), 
+    Get info about companies, if split is set to True Four lists are returned. One with only companies that bought the last year (customers), one with comapnies that never bought (prospects), 
     one with companies that havn't bought last year (inactive) and one with others/notinterested
 
     Returns list(s) of companies as Limeobjects. Customers, prospects, inactives, others
@@ -74,7 +79,7 @@ def getCompanyInfo(split = False ):
         inactives = []
         others = []
         
-
+        #This could be optimized... 
         dealsFromLastYear,d1,d2,d3 = getDealsFromDate()
         allDeals = getAllDeals() 
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/company/"
@@ -110,7 +115,7 @@ def getCompanyInfo(split = False ):
         
                 
         
-        print("Number of customers: ", len(customers), " number of prospects: ",len(prospects)," number of inactives: ", len(inactives), " number of others: ",len(others)) #Hur kan detta vara 111 när limit är 50? 
+        print("**In getCompanyInfo** Number of customers: ", len(customers), " number of prospects: ",len(prospects)," number of inactives: ", len(inactives), " number of others: ",len(others)) #Hur kan detta vara 111 när limit är 50? 
         return customers, prospects, inactives,others 
 
 
@@ -121,9 +126,53 @@ def getCompanyInfo(split = False ):
         url = base_url + params
         response_companies = get_api_data(headers=headers, url=url)
 
-        print("number of companies: ",len(response_companies)) #Hur kan detta vara 111 när limit är 50? 
+        print("**In getCompanyInfo** Number of companies: ",len(response_companies)) #Hur kan detta vara 111 när limit är 50? 
 
         return response_companies
+
+def getDealsLastYears(numberYears = 5): 
+    '''
+    Returns a list of integers conatining the number of deals for that year. Most recent year is first. 
+    '''
+    dealsEachYear = []
+
+    #For adding statistics about revenues each year
+    revenueEachYear = []
+    averageRevenueEachYear = []
+
+    for i in range(numberYears):
+        today =  str(datetime.date(datetime.now() - relativedelta(years=i+1)))
+        base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
+        params = "?_limit=50&min-closeddate="+str(today)+"T23:59Z&_sort=closeddate"
+        url = base_url + params
+        print("URL: ",url)
+        response_deals = get_api_data(headers=headers, url=url)
+
+        #Calculate how many deals were made last years 
+        if len(dealsEachYear) == 0: 
+            dealsEachYear.append(len(response_deals))
+        else: 
+            dealsEachYear.append(len(response_deals) - dealsEachYear[-1])
+        
+        #For adding statistics about revenues each year
+        """
+        if len(revenueEachYear) == 0: 
+            totalValueFromDealsLastYear = 0
+            for deal in response_deals:
+                totalValueFromDealsLastYear += int(deal['value']) 
+            averageRevenueEachYear.append(str(totalValueFromDealsLastYear/len(response_deals)))
+        else: 
+            totalValueFromDealsLastYear = 0
+            for deal in response_deals:
+                totalValueFromDealsLastYear += int(deal['value']) 
+            averageRevenueEachYear.append(str(totalValueFromDealsLastYear/len(response_deals)))    
+        """        
+
+    print("**In getDealsLastYears** Number of deals each year: ", dealsEachYear)
+
+
+    return dealsEachYear
+    
 
 
 # Example of function for REST API call to get data from Lime
@@ -135,6 +184,7 @@ def get_api_data(headers, url):
                                verify=False)
 
     # Convert the response string into json data and get embedded limeobjects
+    
     json_data = json.loads(response.text)
     limeobjects = json_data.get("_embedded").get("limeobjects")
     #print(limeobjects)
@@ -166,7 +216,26 @@ def get_api_data(headers, url):
 # Index page
 @app.route('/')
 def index():
-	return render_template('home.html')
+    
+    #Get deals
+    deals = getDealsFromDate()
+
+    #Find last sale 
+    
+    print(deals)
+    print("Numer of deals: ", len(deals))
+    print(deals[0][0])
+    print("URL: ",deals[0][0]['_links']['relation_coworker']['href'])
+    lastDealBy = requests.get(url=deals[0][0]['_links']['relation_coworker']['href'],
+                               headers=headers,
+                               data=None,
+                               verify=False)
+
+    lastDealBy = json.loads(lastDealBy.text)
+    print("Last deal by: ", lastDealBy)
+    print("Name is: ",lastDealBy['name'])
+    
+    return render_template('home.html',employee = lastDealBy['name'])
 
 
 #Deals page 
@@ -189,13 +258,16 @@ def deals():
     #Win / costumer 
     companiesList = getCompanyInfo(True)
     labelsAndDataDict.append({'data': 'Value of won deals per customer','value':str(round(totalValueFromDealsLastYear/len(companiesList[0])))})
+    
 
     """
     companiesList = getCompanyInfo(True)
     labelsAndDataDict.append({'data': 'Total value of won deals per customer','value':str(round(totalValueFromDealsLastYear/len(companiesList[0])))})
     """
 
-    return render_template('deals.html', deals=companiesList,items=labelsAndDataDict)
+    dealsList = getDealsLastYears() 
+
+    return render_template('deals.html', deals=companiesList,items=labelsAndDataDict,dealsList = dealsList)
 
 #Deals page 
 @app.route('/companies')
@@ -203,14 +275,6 @@ def companies():
     #Find customers and rest 
     toWebpage = []
     comps = getCompanyInfo(True)
-
-    """
-    for group in comps: 
-        companiesString = ""
-        for company in group: 
-            companiesString += company['name'] + "<br>"
-        toWebpage.append({'Title':"Customers",'companies': companiesString})
-    """
 
     for group in comps: 
         companiesString = []
@@ -222,7 +286,9 @@ def companies():
     toWebpage[2]['Title'] = "Inactives"
     toWebpage[3]['Title'] = "Others/Not interested"
 
-    return render_template('companies.html',items=toWebpage,test= {"test":"Funkar"})
+    dealsList = getDealsLastYears() 
+
+    return render_template('companies.html',items=toWebpage,test= {"test":"Funkar"},dealsList = dealsList)
 
 
 # Example page

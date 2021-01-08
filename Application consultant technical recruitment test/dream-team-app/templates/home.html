@@ -1,8 +1,39 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-	<div class="jumbotron text-center">
-		<h1>Welcome to Dreamteam CRM!</h1>
-		<p class="lead">Use the links in the navigation bar above to find information about deals and companies</p>
-	</div>
+<div class="container">
+	<div class="row">
+		<div class="col-xl">
+			<div class="jumbotron text-center">
+				<h1>Welcome to Dreamteam CRM!</h1>
+				<p class="lead">Use the links in the navigation bar above to find information about deals and companies. To the right you can find recent news.</p>
+			</div>
+		</div>
+		<div class="col-sm">
+			<div class="row">
+				<div class="card" style="width: 36rem;">
+					<div class="card-body">
+						<h4>Below are the recent news.</h4>
+					</div>	
+				</div>
+			</div>
+			<div class="row">
+				<div class="card" style="width: 36rem;">
+					<div class="card-body">
+						<h5>Congratulations to {{employee}} for our latest sale!</h5>
+					</div>	
+				</div>
+			</div>
+
+		</div>
+
+
+
+
+		
+	</div>	
+
+
+</div>
+
 {% endblock %}
