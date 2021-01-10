@@ -91,36 +91,6 @@
 	<p id="demo"></p>
 
 	<script type="text/javascript">
-		google.charts.load('current', {'packages':['corechart']});
-		google.charts.setOnLoadCallback(drawChart);
-  
-		function drawChart() {
-		  var data = google.visualization.arrayToDataTable([
-			['Years from now', 'Deals'],
-			['Last year',  {{dealsList[0]}}],
-			['Two years ago',  {{dealsList[1]}}],
-			['Three years ago',  {{dealsList[2]}}],
-			['Four years ago',  {{dealsList[3]}}],
-			['Five years ago',  {{dealsList[4]}}]
-		  ]);
-  
-		  var options = {
-			title: 'Deals made each year',
-			curveType: 'function',
-			legend: { position: 'bottom' }
-		  };
-  
-		  var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
-  
-		  chart.draw(data, options);
-		}
-	  </script>
-
-
-
-
-
-	<script type="text/javascript">
 
 		//var a = {{ items[0].Title }};
 		// Load google charts
@@ -145,6 +115,7 @@
 		  chart.draw(data, options);
 		}
 	</script>
+
 
 
 

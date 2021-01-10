@@ -8,6 +8,7 @@ import json
 #my imports 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import time
 
 app = Flask(__name__, static_url_path='/static')
 
@@ -25,6 +26,9 @@ averageValueFromDealsLastYear = 0
 numberOfDealsLastYear = 0
 labelsAndDataDict = []
 
+#Disable warning 
+requests.packages.urllib3.disable_warnings()
+
 #My functions 
 def getDealsFromDate(ownDate = False): 
     '''
@@ -32,6 +36,8 @@ def getDealsFromDate(ownDate = False):
 
     Returns List of deals, Total value, Average value, Number of deals
     '''
+    startTime = time.time() 
+
     if not ownDate: 
         today = str(datetime.date(datetime.now() - relativedelta(years=1)))
         #today = "2019-01-07"
@@ -48,7 +54,7 @@ def getDealsFromDate(ownDate = False):
         totalValueFromDealsLastYear += int(deal['value']) 
     averageValue = str(totalValueFromDealsLastYear/len(response_deals))
 
-    print("**In getDealsFromDate** Deals found: ", len(response_deals))
+    print("**In getDealsFromDate** Deals found: ", len(response_deals), ". Took ", time.time()-startTime, " seconds.")
 
 
     return response_deals, totalValueFromDealsLastYear, averageValue,len(response_deals)
@@ -57,12 +63,14 @@ def getAllDeals():
     '''
     Returns all deals
     '''
+    startTime = time.time() 
+
     base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
     params = "?_limit=50&_sort=-closeddate"
     url = base_url + params
     response_deals = get_api_data(headers=headers, url=url)
 
-    print("**In getAllDeals**", len(response_deals), " deals found")
+    print("**In getAllDeals**", len(response_deals), " deals found", ". Took ", time.time()-startTime, " seconds.")
 
     return response_deals
 
@@ -73,6 +81,8 @@ def getCompanyInfo(split = False ):
 
     Returns list(s) of companies as Limeobjects. Customers, prospects, inactives, others
     '''
+    startTime = time.time() 
+
     if split: 
         customers = []
         prospects = []
@@ -95,14 +105,16 @@ def getCompanyInfo(split = False ):
             for deal in dealsFromLastYear: 
                 if deal['company'] == company['_id']:
                     customerBool = True
+                    break 
 
             if customerBool: 
                 customers.append(company)
             else: 
-                #To find inactives 
+                #To find inactives, could remove deals from the last year to speed things up 
                 for deal in allDeals: 
                     if deal['company'] == company['_id']:
                         inactiveBool = True 
+                        break
                 if inactiveBool: 
                     inactives.append(company)
                 else: 
@@ -115,7 +127,7 @@ def getCompanyInfo(split = False ):
         
                 
         
-        print("**In getCompanyInfo** Number of customers: ", len(customers), " number of prospects: ",len(prospects)," number of inactives: ", len(inactives), " number of others: ",len(others)) #Hur kan detta vara 111 när limit är 50? 
+        print("**In getCompanyInfo** Number of customers: ", len(customers), " number of prospects: ",len(prospects)," number of inactives: ", len(inactives), " number of others: ",len(others), ". Took ", time.time()-startTime, " seconds.") #Hur kan detta vara 111 när limit är 50? 
         return customers, prospects, inactives,others 
 
 
@@ -134,6 +146,8 @@ def getDealsLastYears(numberYears = 5):
     '''
     Returns a list of integers conatining the number of deals for that year. Most recent year is first. 
     '''
+    startTime = time.time() 
+
     dealsEachYear = []
 
     #For adding statistics about revenues each year
@@ -168,7 +182,7 @@ def getDealsLastYears(numberYears = 5):
             averageRevenueEachYear.append(str(totalValueFromDealsLastYear/len(response_deals)))    
         """        
 
-    print("**In getDealsLastYears** Number of deals each year: ", dealsEachYear)
+    print("**In getDealsLastYears** Number of deals each year: ", dealsEachYear, ". Took ", time.time()-startTime, " seconds.")
 
 
     return dealsEachYear
@@ -286,9 +300,9 @@ def companies():
     toWebpage[2]['Title'] = "Inactives"
     toWebpage[3]['Title'] = "Others/Not interested"
 
-    dealsList = getDealsLastYears() 
+    #dealsList = getDealsLastYears() 
 
-    return render_template('companies.html',items=toWebpage,test= {"test":"Funkar"},dealsList = dealsList)
+    return render_template('companies.html',items=toWebpage,test= {"test":"Funkar"}) #,dealsList = dealsList
 
 
 # Example page
