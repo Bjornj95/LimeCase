@@ -20,13 +20,13 @@ headers = {
         "x-api-key": "860393E332148661C34F8579297ACB000E15F770AC4BD945D5FD745867F590061CAE9599A99075210572"
         }
 
-#Variables (not really used)
+#Variables (not really used but could be to decrease number of requests)
 totalValueFromDealsLastYear = 0 
 averageValueFromDealsLastYear = 0
 numberOfDealsLastYear = 0
 labelsAndDataDict = []
 
-#Disable warning 
+#Disable warning to clean up cmd 
 requests.packages.urllib3.disable_warnings()
 
 #My functions 
