@@ -32,7 +32,7 @@ timeSinceCompaniesRequest = None
 timeSinceNewsUpdated = None 
 updatedTime = None 
 
-updateFreq = 120 #In seconds 
+updateFreq = 60*60 #In seconds 
 
 #Disable warning to clean up cmd 
 requests.packages.urllib3.disable_warnings()
@@ -50,7 +50,7 @@ def _getDeals():
     if time.time() - timeSinceDealsRequest > updateFreq: 
         print("New requests made")
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-        params = "?_limit=50&_sort=closeddate"
+        params = "?_limit=50" #Någonsting blir konstigt med sorteringen... 
         url = base_url + params
         Deals = get_api_data(headers=headers, url=url)
         
@@ -87,7 +87,9 @@ def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
     '''
     Calculates total value from deals since date provided (default is to get all deals) and average value of the deals. 
 
-    fromYear determins a specific year to get deals from. If splitMonth is set to True a list containing number of deals each month will be returned where indices correspond to month
+    fromYear determins a specific year to get deals from. If only year is provided deals from that year is returned, if full date (20xx-xx-xx) is used deals from one year period (specified by nbrOfYears) is returned
+    
+    If splitMonth is set to True a list containing number of deals each month will be returned where indices correspond to month
 
     Returns List of deals, Total value, Average value, Number of deals
     '''
@@ -100,15 +102,26 @@ def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
     totalValueFromDeals = 0 
     averageValue = 0
 
-    if fromDate != False: #If certain deals are to be extracted 
+    if fromDate != False: #If not all deals 
         for deal in deals: 
+            #If the deal belongs to the year requested 
+            if len(fromDate.split("-")) == 1:
+                if deal['closeddate'] != None:
+                    dealYear = deal['closeddate'].split("-")[0]
+                    fromYear = fromDate.split("-")[0]
+                    print("--------------------Titta här-------------------",deal['dealstatus']['key'])
+                    if dealYear == fromYear: 
+                        #print("--------------------Titta här-------------------",dealYear,fromYear)
+                        returnedDeals.append(deal)
+
             #If the deal belongs to the time period requested 
-            if deal['closeddate'] != None:
-                dealYear = deal['closeddate'].split("-")[0]
-                fromYear = fromDate.split("-")[0]
-                #print("--------------------Titta här-------------------",dealYear,fromYear)
-                if dealYear == fromYear: 
-                    returnedDeals.append(deal)
+            else:
+                if deal['closeddate'] != None:
+                    dealYear = datetime.strptime(deal['closeddate'].split("T")[0],"%Y-%m-%d")
+                    fromYear = datetime.strptime(fromDate,"%Y-%m-%d")
+                    #print("--------------------Titta här-------------------",dealYear,fromYear)
+                    if dealYear > fromYear and dealYear < (fromYear + relativedelta(years=nbrOfYears)): 
+                        returnedDeals.append(deal)
 
 
         if splitMonths != False: 
@@ -120,6 +133,10 @@ def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
 
         else: 
             for deal in returnedDeals:
+                print(deal['name'])
+                print(int(deal['value']))
+                print(deal['dealstatus']['id'])
+                print("-------------------------")
                 totalValueFromDeals += int(deal['value']) 
 
             if len(returnedDeals) > 0: 
@@ -139,7 +156,7 @@ def getCompanies(split = False ):
     Get info about companies, if split is set to True Four lists are returned. One with only companies that bought the last year (customers), one with companies that never bought (prospects), 
     one with companies that havn't bought last year (inactive) and one with others/notinterested
 
-    Returns list(s) of companies as Limeobjects. Customers, prospects, inactives, others and dictionary containing company:dealValue
+    Returns list(s) of companies as Limeobjects. Customers, prospects, inactives, others and dictionary containing company:dealValue for customers 
     '''
     startTime = time.time() 
 
@@ -151,8 +168,8 @@ def getCompanies(split = False ):
 
         companyDealsDict = {}
         
-        #This could be optimized by not getting last years deals twice 
-        dealsFromLastYear,d1,d2,d3 = getDeals(fromDate="2020")
+        dealsFromOneYearBack,d1,d2,d3 = getDeals(fromDate=(datetime.today()-relativedelta(years=1)).strftime('%Y-%m-%d'))
+        dealsFromLastYear = getDeals(fromDate=(datetime.today()-relativedelta(years=1)).strftime('%Y'))[0]
         allDeals = getDeals()[0]
         response_companies = _getCompanies()
 
@@ -161,10 +178,14 @@ def getCompanies(split = False ):
             inactiveBool = False 
 
             #To find customers 
-            for deal in dealsFromLastYear: 
+            for deal in dealsFromOneYearBack: 
                 if deal['company'] == company['_id']:
                     customerBool = True
-                    print(deal['value'])
+
+
+            #To build dictionary with customers deals from last year 
+            for deal in dealsFromLastYear: 
+                if deal['company'] == company['_id']:
                     if company['name'] in companyDealsDict:
                         companyDealsDict[company['name']] += deal['value']
                     else: 
@@ -176,7 +197,7 @@ def getCompanies(split = False ):
             else: 
                 #To find inactives, could remove deals from the last year to speed things up 
                 for deal in allDeals: 
-                    if deal['company'] == company['_id']:
+                    if deal['company'] == company['_id'] and deal['closeddate'] != None:
                         inactiveBool = True 
                         break
                 if inactiveBool: 
@@ -203,6 +224,7 @@ def getCompanies(split = False ):
 
         return response_companies
 
+"""
 def getDealsLastYears(numberYears = 5): 
     '''
     Returns a list of integers conatining the number of deals for that year and value of the deals (10s of milions). Most recent year is first in the list. 
@@ -219,17 +241,6 @@ def getDealsLastYears(numberYears = 5):
         y = datetime.today().year - i
         response_deals = getDeals(str(y))
 
-        """
-        fromDate =  str(datetime.date(datetime.now() - relativedelta(years=i+1)))
-        base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
-        params = "?_limit=50&min-closeddate="+str(fromDate)+"T23:59Z&_sort=closeddate"
-        if i > 0: 
-            params = "?_limit=50&min-closeddate="+str(fromDate)+"T23:59Z&max-closeddate="+str(lastDate)+"T23:59Z&_sort=closeddate"
-        url = base_url + params
-        print("URL: ",url)
-        response_deals = get_api_data(headers=headers, url=url)
-        """
-
         dealsEachYear.append(len(response_deals))
 
         #lastDate = fromDate
@@ -245,6 +256,7 @@ def getDealsLastYears(numberYears = 5):
 
 
     return dealsEachYear, revenueEachYear
+    """
     
 def getNewsItems(): 
 
@@ -350,36 +362,50 @@ def index():
 def deals():
     labelsAndDataDict = []
     #Get data about deals last year
+    print("This year")
     dummy,totalValueFromDealsLastYear, averageValueFromDealsLastYear, numberOfDealsLastYear = getDeals(fromDate=str(datetime.today().year-1))
     previousYearsValues = getDeals(fromDate=str(datetime.today().year-2))
 
     #Total value from deals 
     comparedToLastYear = str(round(totalValueFromDealsLastYear/previousYearsValues[1]))
-    labelsAndDataDict.append({'data': 'Total value of deals','value':str(formatNumber(totalValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-1) + ")"})
+    labelsAndDataDict.append({'data': 'Total value of deals','value':str(formatNumber(totalValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-2) + ")"})
 
     #Add average deal value to dict
     comparedToLastYear = str(round(float(averageValueFromDealsLastYear)/float(previousYearsValues[2])))
-    labelsAndDataDict.append({'data': 'Average value of deals','value':str(formatNumber(averageValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-1) + ")"})
+    labelsAndDataDict.append({'data': 'Average value of deals','value':str(formatNumber(averageValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-2) + ")"})
 
     #Data for chart 
     dealsList = []
+    yearsList = []
+    dealsList.append(getDeals(fromDate=str(datetime.today().year),splitMonths=True)[0])
+    yearsList.append(datetime.today().year)
     dealsList.append(getDeals(fromDate=str(datetime.today().year-1),splitMonths=True)[0])
+    yearsList.append(datetime.today().year-1)
     dealsList.append(getDeals(fromDate=str(datetime.today().year-2),splitMonths=True)[0])
+    yearsList.append(datetime.today().year-2)
     dealsList.append(getDeals(fromDate=str(datetime.today().year-3),splitMonths=True)[0])
+    yearsList.append(datetime.today().year-3)
     dealsList.append(getDeals(fromDate=str(datetime.today().year-4),splitMonths=True)[0])
+    yearsList.append(datetime.today().year-4)
     dealsList.append(getDeals(fromDate=str(datetime.today().year-5),splitMonths=True)[0])
+    yearsList.append(datetime.today().year-5)
 
-    #Deal value for each company last year 
+    #Deal value for each customer last year 
+        #To chart 
+    smallChart = []
     valuePerCompany = getCompanies(True)[4]
     temp = []
-    for entry in valuePerCompany: 
+    for i,entry in enumerate(valuePerCompany): 
         temp.append(entry + ": " +str(formatNumber(valuePerCompany[entry])))
+        smallChart.append([])
+        smallChart[-1].append(entry)
+        smallChart[-1].append(valuePerCompany[entry])
     valuePerCompany = temp
 
     labelsAndDataDict.append({'data': 'Deal value of all customers','value':valuePerCompany})
 
 
-    return render_template('deals.html',items=labelsAndDataDict,dealsList = dealsList, upt = updatedTime) #, revenueList = revenueList
+    return render_template('deals.html',items=labelsAndDataDict,dealsList = dealsList, upt = updatedTime, yearsList = yearsList,smallChart = smallChart) #, revenueList = revenueList
 
 #Deals page 
 @app.route('/companies')

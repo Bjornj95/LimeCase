@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 
 {% block body %}
-	<h1>Last years deals</h1>
+	<h1>Deals {{yearsList[1]}}</h1>
 	<br>
 
 	<div class="container">
@@ -33,63 +33,102 @@
 		  </div>
 		  <div class="col-xl">
 			<div class="jumbotron" style = "height:300px;">
-				<h5 style="text-align:center;">"Temp"</h5>
-				<hr class="my-4">
-				<h4 style="text-align:center;">"Temp"</h4>
+				<div id="companyChart" style="text-align:center;width: auto; height: auto" ></div>
 			  </div>
 		  </div>
 		</div>
 		<div class="jumbotron">
 
-			<button type="button" class="btn btn-primary" id="button1" onclick="year1()">2020</button>
-			<button type="button" class="btn btn-primary" id="button2" onclick="year2()">2019</button>
-			<button type="button" class="btn btn-primary" id="button3" onclick="year3()">2018</button>
-			<button type="button" class="btn btn-primary" id="button4" onclick="year4()">2017</button>
-			<button type="button" class="btn btn-primary" id="button5" onclick="year5()">2016</button>
+			<button type="button" class="btn btn-primary" id="button0" onclick="year0()">{{yearsList[0]}}</button>
+			<button type="button" class="btn btn-primary" id="button1" onclick="year1()">{{yearsList[1]}}</button>
+			<button type="button" class="btn btn-primary" id="button2" onclick="year2()">{{yearsList[2]}}</button>
+			<button type="button" class="btn btn-primary" id="button3" onclick="year3()">{{yearsList[3]}}</button>
+			<button type="button" class="btn btn-primary" id="button4" onclick="year4()">{{yearsList[4]}}</button>
+			<button type="button" class="btn btn-primary" id="button5" onclick="year5()">{{yearsList[5]}}</button>
 
-			<div id="curve_chart" style="text-align:center;width: auto; height: 300px" ></div>
+			<div id="curve_chart" style="text-align:center;width: auto; height: auto" ></div>
 
 		  </div>
 
 
 
 	<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-    <script type="text/javascript">
-      google.charts.load('current', {'packages':['corechart']});
-      google.charts.setOnLoadCallback(drawChart);
 
-      function drawChart() {
-        var data = google.visualization.arrayToDataTable([
-          ['Month', 'Number of deals'],
-          ['Jan',  {{dealsList[0][0]}}],
-          ['Feb',  {{dealsList[0][1]}}],
-          ['Mars',  {{dealsList[0][2]}}],
-		  ['April',  {{dealsList[0][3]}}],
-		  ['May',  {{dealsList[0][4]}}],
-          ['June',  {{dealsList[0][5]}}],
-          ['July',  {{dealsList[0][6]}}],
-          ['Aug',  {{dealsList[0][7]}}],
-		  ['Sept',  {{dealsList[0][8]}}],
-		  ['Oct',  {{dealsList[0][9]}}],
-		  ['Nov',  {{dealsList[0][10]}}],
-		  ['Dec',  {{dealsList[0][11]}}]
-        ]);
+	<script type="text/javascript">
+		google.charts.load('current', {'packages':['corechart']});
+		google.charts.setOnLoadCallback(drawChart);
+  
+		function drawChart() {
+		  var data = google.visualization.arrayToDataTable([['Customer', 'Value from closed deals (SEK)'],
+		  ['{{smallChart[0][0]}}',{{smallChart[0][1]}}]]);
 
-        var options = {
-          title: 'Deals closed each oneyear period',
-          curveType: 'none',
-		  legend: { position: 'bottom' },
-		  bars: 'vertical'
-		};
+			{% for comp in smallChart %}
+				{% if loop.index != 1 %}
+					data.addRow(['{{comp[0]}}',{{comp[1]}}])
+				{% endif %}
+			{% endfor %}
+  
+		  var options = {
+			title: 'Value from customers',
+			curveType: 'none',
+			legend: { position: 'bottom' },
+			bars: 'vertical'
+		  };
+  
+		  var chart = new google.visualization.ColumnChart(document.getElementById('companyChart'));
+  
+		  chart.draw(data, options);
+		}
+	</script>
 
-        var chart = new google.visualization.ColumnChart(document.getElementById('curve_chart'));
 
-        chart.draw(data, options);
-      }
-    </script>
+
+
+
+	<script type="text/javascript">
+		google.charts.load('current', {'packages':['corechart']});
+		google.charts.setOnLoadCallback(drawChart);
+  
+		function drawChart() {
+		  var data = google.visualization.arrayToDataTable([
+			['Month', 'Number of deals'],
+			['Jan',  {{dealsList[1][0]}}],
+			['Feb',  {{dealsList[1][1]}}],
+			['Mars',  {{dealsList[1][2]}}],
+			['April',  {{dealsList[1][3]}}],
+			['May',  {{dealsList[1][4]}}],
+			['June',  {{dealsList[1][5]}}],
+			['July',  {{dealsList[1][6]}}],
+			['Aug',  {{dealsList[1][7]}}],
+			['Sept',  {{dealsList[1][8]}}],
+			['Oct',  {{dealsList[1][9]}}],
+			['Nov',  {{dealsList[1][10]}}],
+			['Dec',  {{dealsList[1][11]}}]
+		  ]);
+  
+		  var options = {
+			title: 'Deals closed each month {{yearsList[1]}}',
+			curveType: 'none',
+			legend: { position: 'bottom' },
+			bars: 'vertical'
+		  };
+  
+		  var chart = new google.visualization.ColumnChart(document.getElementById('curve_chart'));
+  
+		  chart.draw(data, options);
+		  
+		  document.getElementById("button0").style.color = "white";
+		  document.getElementById("button1").style.color = "red";
+		  document.getElementById("button2").style.color = "white";
+		  document.getElementById("button3").style.color = "white";
+		  document.getElementById("button4").style.color = "white";
+		  document.getElementById("button5").style.color = "white";
+		}
+	</script>
+
 
 	<script>
-		function year1() {
+		function year0() {
 		google.charts.load('current', {'packages':['corechart']});
 		google.charts.setOnLoadCallback(drawChart);
 
@@ -111,7 +150,7 @@
 			]);
 
 			var options = {
-			title: 'Deals closed each oneyear period',
+			title: 'Deals closed each month {{yearsList[0]}}',
 			curveType: 'none',
 			legend: { position: 'bottom' },
 			bars: 'vertical'
@@ -120,8 +159,10 @@
 			var chart = new google.visualization.ColumnChart(document.getElementById('curve_chart'));
 
 			chart.draw(data, options);
-		}
-				document.getElementById("button1").style.color = "red";
+		}		
+
+				document.getElementById("button0").style.color = "red";
+				document.getElementById("button1").style.color = "white";
 				document.getElementById("button2").style.color = "white";
 				document.getElementById("button3").style.color = "white";
 				document.getElementById("button4").style.color = "white";
@@ -130,7 +171,7 @@
 	</script>
 
 	<script>
-		function year2() {
+		function year1() {
 		google.charts.load('current', {'packages':['corechart']});
 		google.charts.setOnLoadCallback(drawChart);
 
@@ -152,7 +193,7 @@
 			]);
 
 			var options = {
-			title: 'Deals closed each oneyear period',
+			title: 'Deals closed each month {{yearsList[1]}}',
 			curveType: 'none',
 			legend: { position: 'bottom' },
 			bars: 'vertical'
@@ -162,8 +203,10 @@
 
 			chart.draw(data, options);
 		}
-				document.getElementById("button1").style.color = "white";
-				document.getElementById("button2").style.color = "red";
+
+				document.getElementById("button0").style.color = "white";
+				document.getElementById("button1").style.color = "red";
+				document.getElementById("button2").style.color = "white";
 				document.getElementById("button3").style.color = "white";
 				document.getElementById("button4").style.color = "white";
 				document.getElementById("button5").style.color = "white";
@@ -171,7 +214,7 @@
 	</script>
 
 	<script>
-		function year3() {
+		function year2() {
 		google.charts.load('current', {'packages':['corechart']});
 		google.charts.setOnLoadCallback(drawChart);
 
@@ -193,7 +236,7 @@
 			]);
 
 			var options = {
-			title: 'Deals closed each oneyear period',
+			title: 'Deals closed each month {{yearsList[2]}}',
 			curveType: 'none',
 			legend: { position: 'bottom' },
 			bars: 'vertical'
@@ -203,16 +246,18 @@
 
 			chart.draw(data, options);
 		}
+				
+				document.getElementById("button0").style.color = "white";
 				document.getElementById("button1").style.color = "white";
-				document.getElementById("button2").style.color = "white";
-				document.getElementById("button3").style.color = "red";
+				document.getElementById("button2").style.color = "red";
+				document.getElementById("button3").style.color = "white";
 				document.getElementById("button4").style.color = "white";
 				document.getElementById("button5").style.color = "white";
 			}
 	</script>
 
 	<script>
-		function year4() {
+		function year3() {
 		google.charts.load('current', {'packages':['corechart']});
 		google.charts.setOnLoadCallback(drawChart);
 
@@ -234,7 +279,7 @@
 			]);
 
 			var options = {
-			title: 'Deals closed each oneyear period',
+			title: 'Deals closed each month {{yearsList[3]}}',
 			curveType: 'none',
 			legend: { position: 'bottom' },
 			bars: 'vertical'
@@ -244,16 +289,18 @@
 
 			chart.draw(data, options);
 		}
+				
+				document.getElementById("button0").style.color = "white";
 				document.getElementById("button1").style.color = "white";
 				document.getElementById("button2").style.color = "white";
-				document.getElementById("button3").style.color = "white";
-				document.getElementById("button4").style.color = "red";
+				document.getElementById("button3").style.color = "red";
+				document.getElementById("button4").style.color = "white";
 				document.getElementById("button5").style.color = "white";
 			}
 	</script>
 
 	<script>
-		function year5() {
+		function year4() {
 		google.charts.load('current', {'packages':['corechart']});
 		google.charts.setOnLoadCallback(drawChart);
 
@@ -275,7 +322,7 @@
 			]);
 
 			var options = {
-			title: 'Deals closed each oneyear period',
+			title: 'Deals closed each month {{yearsList[4]}}',
 			curveType: 'none',
 			legend: { position: 'bottom' },
 			bars: 'vertical'
@@ -285,6 +332,51 @@
 
 			chart.draw(data, options);
 		}
+				
+				document.getElementById("button0").style.color = "white";
+				document.getElementById("button1").style.color = "white";
+				document.getElementById("button2").style.color = "white";
+				document.getElementById("button3").style.color = "white";
+				document.getElementById("button4").style.color = "red";
+				document.getElementById("button5").style.color = "white";
+			}
+	</script>
+
+	<script>
+		function year5() {
+		google.charts.load('current', {'packages':['corechart']});
+		google.charts.setOnLoadCallback(drawChart);
+
+		function drawChart() {
+			var data = google.visualization.arrayToDataTable([
+			['Month', 'Number of deals'],
+			['Jan',  {{dealsList[5][0]}}],
+			['Feb',  {{dealsList[5][1]}}],
+			['Mars',  {{dealsList[5][2]}}],
+			['April',  {{dealsList[5][3]}}],
+			['May',  {{dealsList[5][4]}}],
+			['June',  {{dealsList[5][5]}}],
+			['July',  {{dealsList[5][6]}}],
+			['Aug',  {{dealsList[5][7]}}],
+			['Sept',  {{dealsList[5][8]}}],
+			['Oct',  {{dealsList[5][9]}}],
+			['Nov',  {{dealsList[5][10]}}],
+			['Dec',  {{dealsList[5][11]}}]
+			]);
+
+			var options = {
+			title: 'Deals closed each month {{yearsList[5]}}',
+			curveType: 'none',
+			legend: { position: 'bottom' },
+			bars: 'vertical'
+			};
+
+			var chart = new google.visualization.ColumnChart(document.getElementById('curve_chart'));
+
+			chart.draw(data, options);
+		}		
+
+				document.getElementById("button0").style.color = "white";
 				document.getElementById("button1").style.color = "white";
 				document.getElementById("button2").style.color = "white";
 				document.getElementById("button3").style.color = "white";
@@ -294,9 +386,6 @@
 	</script>
 
 
-		{% for deal in dealsList[year] %}
-		<p>{{ deal }}</p>
-		{% endfor %} 
 
 	
 {% endblock %}
