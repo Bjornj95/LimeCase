@@ -40,6 +40,9 @@ requests.packages.urllib3.disable_warnings()
 
 #My functions 
 def _getDeals(): 
+    '''
+    Returns all deals from server 
+    '''
     global timeSinceDealsRequest
     global Deals
     global updatedTime
@@ -65,6 +68,9 @@ def _getDeals():
     return Deals
 
 def _getCompanies(): 
+    '''
+    Returns all deals from server 
+    '''
     global timeSinceCompaniesRequest
     global Companies
     global updatedTime
@@ -90,9 +96,9 @@ def _getCompanies():
 
 def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
     '''
-    Used to get deals. 
+    Used to get deals since date provided (if fromDate is not set all deals are returned). 
 
-    Calculates total value from deals since date provided (default is to get all deals) and average value of the deals. 
+    Total value and average value of the deals are also returned.  
 
     fromYear determins a specific year to get deals from. If only year is provided deals from that year is returned, if full date (20xx-xx-xx) is used deals from one year period (specified by nbrOfYears) is returned
     
@@ -166,10 +172,14 @@ def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
 
     return returnedDeals, totalValueFromDeals, averageValue, len(returnedDeals)
 
-def getCompanies(split = False ): 
+def getCompanies(split = False, offset = 0): 
     '''
     Get info about companies, if split is set to True Four lists are returned. One with only companies that bought the last year (customers), one with companies that never bought (prospects), 
-    one with companies that havn't bought last year (inactive) and one with others/notinterested
+    one with companies that havn't bought last year (inactive) and one with others/notinterested.
+
+    If split is not set all companies are returned 
+
+    offset can be set to get companies from different timeperiods. Entered in years 
 
     Returns list(s) of companies as Limeobjects. Customers, prospects, inactives, others and dictionary containing company:dealValue for customers 
     '''

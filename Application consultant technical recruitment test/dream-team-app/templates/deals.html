@@ -21,22 +21,27 @@
 			  </div>
 		  </div>
 		</div>
-		<div class = "row">
-		  <div class="col-xl">
+		
 			<div class="jumbotron" style = "height:300px;">
-				<h5 style="text-align:center;">{{items[2].data}}</h5>
-				<hr class="my-4">
-				{% for comp in items[2].value %}
-					<h4 style="text-align:left;">{{ comp }} SEK</h4>
-				{%endfor%}
-			  </div>
-		  </div>
-		  <div class="col-xl">
-			<div class="jumbotron" style = "height:300px;">
-				<div id="companyChart" style="text-align:center;width: auto; height: auto" ></div>
-			  </div>
-		  </div>
-		</div>
+				<div class = "row">
+					<div class="col-xl">
+						
+							<h5 style="text-align:center;">{{items[2].data}}</h5>
+							<hr class="my-4">
+							{% for comp in items[2].value %}
+								<h4 style="text-align:left;">{{ comp }} SEK</h4>
+							{%endfor%}
+					</div>
+		  
+		  			<div class="col-xl">
+
+						<div id="companyChart" style="text-align:center;width: auto; height: auto" ></div>
+
+		  			</div>
+		  		</div>
+			</div>
+
+
 		<div class="jumbotron">
 
 			<button type="button" class="btn btn-primary" id="button0" onclick="year0()">{{yearsList[0]}}</button>
