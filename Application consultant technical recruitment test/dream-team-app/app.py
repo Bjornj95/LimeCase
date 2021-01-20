@@ -179,7 +179,7 @@ def getCompanies(split = False, offset = 0):
 
     If split is not set all companies are returned 
 
-    offset can be set to get companies from different timeperiods. Entered in years 
+    offset can be set to get companies from different timeperiods. Default is to get from last year, offset is in relation to this 
 
     Returns list(s) of companies as Limeobjects. Customers, prospects, inactives, others and dictionary containing company:dealValue for customers 
     '''
@@ -193,8 +193,8 @@ def getCompanies(split = False, offset = 0):
 
         companyDealsDict = {}
         
-        dealsFromOneYearBack,d1,d2,d3 = getDeals(fromDate=(datetime.today()-relativedelta(years=1)).strftime('%Y-%m-%d'))
-        dealsFromLastYear = getDeals(fromDate=(datetime.today()-relativedelta(years=1)).strftime('%Y'))[0]
+        dealsFromOneYearBack,d1,d2,d3 = getDeals(fromDate=(datetime.today()-relativedelta(years=1+offset)).strftime('%Y-%m-%d'))
+        dealsFromLastYear = getDeals(fromDate=(datetime.today()-relativedelta(years=1+offset)).strftime('%Y'))[0]
         allDeals = getDeals()[0]
         response_companies = _getCompanies()
 
@@ -336,7 +336,7 @@ def index():
 @app.route('/deals')
 def deals():
     labelsAndDataDict = []
-    #Get data about deals last year
+    #Get data about deals
     dummy,totalValueFromDealsLastYear, averageValueFromDealsLastYear, numberOfDealsLastYear = getDeals(fromDate=str(datetime.today().year-1))
     previousYearsValues = getDeals(fromDate=str(datetime.today().year-2))
 
@@ -348,27 +348,21 @@ def deals():
     comparedToLastYear = str(round(float(averageValueFromDealsLastYear)/float(previousYearsValues[2])))
     labelsAndDataDict.append({'data': 'Average value of deals','value':str(formatNumber(averageValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-2) + ")"})
 
-    #Data for chart 
+    #Data large for chart 
     dealsList = []
     yearsList = []
-    dealsList.append(getDeals(fromDate=str(datetime.today().year),splitMonths=True)[0])
-    yearsList.append(datetime.today().year)
-    dealsList.append(getDeals(fromDate=str(datetime.today().year-1),splitMonths=True)[0])
-    yearsList.append(datetime.today().year-1)
-    dealsList.append(getDeals(fromDate=str(datetime.today().year-2),splitMonths=True)[0])
-    yearsList.append(datetime.today().year-2)
-    dealsList.append(getDeals(fromDate=str(datetime.today().year-3),splitMonths=True)[0])
-    yearsList.append(datetime.today().year-3)
-    dealsList.append(getDeals(fromDate=str(datetime.today().year-4),splitMonths=True)[0])
-    yearsList.append(datetime.today().year-4)
-    dealsList.append(getDeals(fromDate=str(datetime.today().year-5),splitMonths=True)[0])
-    yearsList.append(datetime.today().year-5)
+    for i in range(6): 
+        dealsList.append(getDeals(fromDate=str(datetime.today().year-i),splitMonths=True)[0])
+        yearsList.append(datetime.today().year-i)
 
-    #Deal value for each customer last year 
-        #To chart 
-    smallChart = []
+
+    #Deal value for each customer last year and building data to small chart 
+    smallChart = [] #Contains company names and revenue 
+    temp = [] #Used temporarily store the list of costumers and revenues 
+    customerRevenueDict = [] #List of dictionaries containing customers and revenue each year 
+    for in in range(6): 
     valuePerCompany = getCompanies(True)[4]
-    temp = []
+    
     for i,entry in enumerate(valuePerCompany): 
         temp.append(entry + ": " +str(formatNumber(valuePerCompany[entry])))
         smallChart.append([])
