@@ -33,6 +33,7 @@ timeSinceNewsUpdated = None
 updatedTime = None 
 
 updateFreq = 60*60 #In seconds 
+updateFreqNews = 4 #In seconds 
 
 #Disable warning to clean up cmd 
 requests.packages.urllib3.disable_warnings()
@@ -43,12 +44,14 @@ def _getDeals():
     global Deals
     global updatedTime
 
+    newRequestMade = False 
+
     startTime = time.time() 
     if timeSinceDealsRequest == None:
         timeSinceDealsRequest = -updateFreq
 
     if time.time() - timeSinceDealsRequest > updateFreq: 
-        print("New requests made")
+        newRequestMade = True 
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/"
         params = "?_limit=50" #Någonsting blir konstigt med sorteringen... 
         url = base_url + params
@@ -57,7 +60,7 @@ def _getDeals():
         timeSinceDealsRequest = time.time()
         updatedTime = str(datetime.today())
 
-    print("**In _getDeals** Deals found: ", len(Deals), ". Took ", time.time()-startTime, " seconds.")
+    print("**In _getDeals** Deals found: ", len(Deals), ". Took ", time.time()-startTime, " seconds. New request: ", newRequestMade)
 
     return Deals
 
@@ -66,12 +69,14 @@ def _getCompanies():
     global Companies
     global updatedTime
 
+    newRequestMade = False 
+
     startTime = time.time() 
     if timeSinceCompaniesRequest == None:
         timeSinceCompaniesRequest = -updateFreq
 
     if time.time() - timeSinceCompaniesRequest > updateFreq: 
-        print("New requests made")
+        newRequestMade = True 
         base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/company/"
         params = "?_limit=50"
         url = base_url + params
@@ -79,12 +84,14 @@ def _getCompanies():
         timeSinceCompaniesRequest = time.time() 
         updatedTime = str(datetime.today())
 
-    print("**In _getCompanies** Deals found: ", len(Companies), ". Took ", time.time()-startTime, " seconds.")
+    print("**In _getCompanies** Deals found: ", len(Companies), ". Took ", time.time()-startTime, " seconds. New request: ", newRequestMade)
 
     return Companies
 
 def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
     '''
+    Used to get deals. 
+
     Calculates total value from deals since date provided (default is to get all deals) and average value of the deals. 
 
     fromYear determins a specific year to get deals from. If only year is provided deals from that year is returned, if full date (20xx-xx-xx) is used deals from one year period (specified by nbrOfYears) is returned
@@ -106,44 +113,52 @@ def getDeals(fromDate = False, nbrOfYears = 1, splitMonths = False):
         for deal in deals: 
             #If the deal belongs to the year requested 
             if len(fromDate.split("-")) == 1:
-                if deal['closeddate'] != None:
+                if deal['closeddate'] != None and deal['dealstatus']['key'] == 'agreement':
                     dealYear = deal['closeddate'].split("-")[0]
                     fromYear = fromDate.split("-")[0]
-                    print("--------------------Titta här-------------------",deal['dealstatus']['key'])
                     if dealYear == fromYear: 
-                        #print("--------------------Titta här-------------------",dealYear,fromYear)
                         returnedDeals.append(deal)
 
             #If the deal belongs to the time period requested 
             else:
-                if deal['closeddate'] != None:
+                if deal['closeddate'] != None and deal['dealstatus']['key'] == 'agreement':
                     dealYear = datetime.strptime(deal['closeddate'].split("T")[0],"%Y-%m-%d")
                     fromYear = datetime.strptime(fromDate,"%Y-%m-%d")
-                    #print("--------------------Titta här-------------------",dealYear,fromYear)
                     if dealYear > fromYear and dealYear < (fromYear + relativedelta(years=nbrOfYears)): 
                         returnedDeals.append(deal)
 
-
-        if splitMonths != False: 
-                deals = returnedDeals
-                returnedDeals = [0,0,0,0,0,0,0,0,0,0,0,0]
-                for deal in deals: 
-                    month = int(deal['closeddate'].split("-")[1])
-                    returnedDeals[month-1] += 1
-
-        else: 
-            for deal in returnedDeals:
-                print(deal['name'])
-                print(int(deal['value']))
-                print(deal['dealstatus']['id'])
-                print("-------------------------")
-                totalValueFromDeals += int(deal['value']) 
-
-            if len(returnedDeals) > 0: 
-                averageValue = str(totalValueFromDeals/len(returnedDeals))
-
+    #If all deals are requested 
     else: 
-        returnedDeals = deals
+        returnedDeals = []
+        tempList = deals 
+        #Removes deals that are not agreements 
+        for deal in tempList: 
+            if deal['dealstatus']['key'] != 'agreement': 
+                returnedDeals.append(deal)
+                
+
+
+    #Calculate total and average deal value if time period is chosen 
+    for deal in returnedDeals:
+        """If one want insight in deals gathered 
+        print(deal['name'])
+        print(int(deal['value']))
+        print(deal['dealstatus']['id'])
+        print("-------------------------")
+        """
+
+        totalValueFromDeals += int(deal['value']) 
+
+    if len(returnedDeals) > 0: 
+        averageValue = str(totalValueFromDeals/len(returnedDeals))
+
+    if splitMonths != False: 
+        deals = returnedDeals
+        returnedDeals = [0,0,0,0,0,0,0,0,0,0,0,0]
+        for deal in deals: 
+            if deal['dealstatus']['key'] == 'agreement':
+                month = int(deal['closeddate'].split("-")[1])
+                returnedDeals[month-1] += 1
 
 
     print("**In getDealsFromDate** Deals found: ", len(returnedDeals), ". Took ", time.time()-startTime, " seconds.")
@@ -215,48 +230,11 @@ def getCompanies(split = False ):
 
 
     else: 
-        base_url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/company/"
-        params = "?_limit=50"
-        url = base_url + params
-        response_companies = get_api_data(headers=headers, url=url)
+        response_companies = _getCompanies()
 
         print("**In getCompanyInfo** Number of companies: ",len(response_companies)) #Hur kan detta vara 111 när limit är 50? 
 
         return response_companies
-
-"""
-def getDealsLastYears(numberYears = 5): 
-    '''
-    Returns a list of integers conatining the number of deals for that year and value of the deals (10s of milions). Most recent year is first in the list. 
-    '''
-    startTime = time.time() 
-
-    dealsEachYear = []
-
-    #For adding statistics about revenues each year
-    revenueEachYear = []
-    #averageRevenueEachYear = [] not currently used 
-
-    for i in range(numberYears):
-        y = datetime.today().year - i
-        response_deals = getDeals(str(y))
-
-        dealsEachYear.append(len(response_deals))
-
-        #lastDate = fromDate
-        
-        totalValueFromDealsLastYear = 0
-        for deal in response_deals[0]:
-            totalValueFromDealsLastYear += int(deal['value']/10000000) #/10 000 000 to fit the axis 
-        revenueEachYear.append(str(totalValueFromDealsLastYear))
- 
-
-
-    print("**In getDealsLastYears** Number of deals each year: ", dealsEachYear, " revenue each year: ", revenueEachYear, ". Took ", time.time()-startTime, " seconds.")
-
-
-    return dealsEachYear, revenueEachYear
-    """
     
 def getNewsItems(): 
 
@@ -266,27 +244,34 @@ def getNewsItems():
 
     startTime = time.time() 
     if timeSinceNewsUpdated == None:
-        timeSinceNewsUpdated = -updateFreq
+        timeSinceNewsUpdated = -updateFreqNews
 
-    if time.time() - timeSinceNewsUpdated > updateFreq: 
-        #Get deals
-        deals = getDeals(fromDate=str(datetime.today().year-1))
+    if time.time() - timeSinceNewsUpdated > updateFreqNews: 
+        #Get latest deal 
+        url = "https://api-test.lime-crm.com/api-test/api/v1/limeobject/deal/?_limit=1&_sort=-closeddate"
 
-        #Find last sale
-        lastDealBy = requests.get(url=deals[0][0]['_links']['relation_coworker']['href'],
+        deal = requests.get(url=url,
+                                headers=headers,
+                                data=None,
+                                verify=False)
+
+        json_data = json.loads(deal.text)
+        deal = json_data.get("_embedded").get("limeobjects")
+
+        #Find seller 
+        lastDealBy = requests.get(url=deal[0]['_links']['relation_coworker']['href'],
                                 headers=headers,
                                 data=None,
                                 verify=False)
 
         lastDealBy = json.loads(lastDealBy.text)
-        print("Last deal by: ", lastDealBy)
         print("Name is: ",lastDealBy['name'])
         NewsItems = lastDealBy['name']
         
         timeSinceNewsUpdated = time.time()
         updatedTime = str(datetime.today())
     
-    return NewsItems
+    return ["Congratulations to " + NewsItems + " for our latest deal: " + deal[0]['name'] + "!"]
 
 def formatNumber(nbr): 
     return "{:,d}".format(round(float(nbr))).replace(","," ")
@@ -334,27 +319,7 @@ def get_api_data(headers, url):
 @app.route('/')
 def index():
     
-    #Get deals
-    deals = getDeals(fromDate=str(datetime.today().year-1))
-
-    #Find last sale
-    """
-    Took the opportunity to understand how the actual request answers look like
-    print(deals)
-    print("Numer of deals: ", len(deals))
-    print(deals[0][0])
-    print("URL: ",deals[0][0]['_links']['relation_coworker']['href'])
-    """
-    lastDealBy = requests.get(url=deals[0][0]['_links']['relation_coworker']['href'],
-                               headers=headers,
-                               data=None,
-                               verify=False)
-
-    lastDealBy = json.loads(lastDealBy.text)
-    print("Last deal by: ", lastDealBy)
-    print("Name is: ",lastDealBy['name'])
-    
-    return render_template('home.html',employee = getNewsItems(), upt = updatedTime)
+    return render_template('home.html',News = getNewsItems(), upt = updatedTime)
 
 
 #Deals page 
@@ -362,7 +327,6 @@ def index():
 def deals():
     labelsAndDataDict = []
     #Get data about deals last year
-    print("This year")
     dummy,totalValueFromDealsLastYear, averageValueFromDealsLastYear, numberOfDealsLastYear = getDeals(fromDate=str(datetime.today().year-1))
     previousYearsValues = getDeals(fromDate=str(datetime.today().year-2))
 
@@ -417,21 +381,18 @@ def companies():
     #print(comps)
 
     for group in comps: 
-        print(len(group))
         companiesString = []
         for company in group: 
             #print(company)
             companiesString.append(company['name'])
         toWebpage.append({'Title':"Customers",'companies': companiesString})
 
-    print(len(toWebpage))
-    for i in toWebpage:
-        print(i)
+
     toWebpage[1]['Title'] = "Prospects"
     toWebpage[2]['Title'] = "Inactives"
     toWebpage[3]['Title'] = "Others/Not interested"
 
-    return render_template('companies.html',items=toWebpage,test= {"test":"Funkar"}, upt = updatedTime) #,dealsList = dealsList
+    return render_template('companies.html',items=toWebpage, upt = updatedTime) #,dealsList = dealsList
 
 
 # Example page
