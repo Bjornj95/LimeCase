@@ -32,7 +32,7 @@ timeSinceCompaniesRequest = None
 timeSinceNewsUpdated = None 
 updatedTime = None 
 
-updateFreq = 60*60 #In seconds 
+updateFreq =  60*60*2#In seconds (60*60*2) 
 updateFreqNews = 4 #In seconds 
 
 #Disable warning to clean up cmd 
@@ -69,7 +69,7 @@ def _getDeals():
 
 def _getCompanies(): 
     '''
-    Returns all deals from server 
+    Returns all companies from server 
     '''
     global timeSinceCompaniesRequest
     global Companies
@@ -210,7 +210,7 @@ def getCompanies(split = False, offset = 0):
 
             #To build dictionary with customers deals from last year 
             for deal in dealsFromLastYear: 
-                if deal['company'] == company['_id']:
+                if deal['company'] == company['_id'] and customerBool: #If " and customerBool" is removed all companies with deals lastyear will be shown
                     if company['name'] in companyDealsDict:
                         companyDealsDict[company['name']] += deal['value']
                     else: 
@@ -284,6 +284,9 @@ def getNewsItems():
     return ["Congratulations to " + NewsItems + " for our latest deal: " + deal[0]['name'] + "!"]
 
 def formatNumber(nbr): 
+    """
+    Formats a number to match currency 
+    """
     return "{:,d}".format(round(float(nbr))).replace(","," ")
 
 
@@ -328,6 +331,7 @@ def get_api_data(headers, url):
 # Index page
 @app.route('/')
 def index():
+    print("------------index page loading------------")
     
     return render_template('home.html',News = getNewsItems(), upt = updatedTime)
 
@@ -335,68 +339,77 @@ def index():
 #Deals page 
 @app.route('/deals')
 def deals():
+    print("------------deals page loading------------")
     labelsAndDataDict = []
+
     #Get data about deals
-    dummy,totalValueFromDealsLastYear, averageValueFromDealsLastYear, numberOfDealsLastYear = getDeals(fromDate=str(datetime.today().year-1))
-    previousYearsValues = getDeals(fromDate=str(datetime.today().year-2))
+    deals = [] #List containing deals from last 5 years 
+    for i in range (4): 
+        deals.append(getDeals(fromDate=str(datetime.today().year-(i+1))))
 
-    #Total value from deals 
-    comparedToLastYear = str(round(totalValueFromDealsLastYear/previousYearsValues[1]))
-    labelsAndDataDict.append({'data': 'Total value of deals','value':str(formatNumber(totalValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-2) + ")"})
-
-    #Add average deal value to dict
-    comparedToLastYear = str(round(float(averageValueFromDealsLastYear)/float(previousYearsValues[2])))
-    labelsAndDataDict.append({'data': 'Average value of deals','value':str(formatNumber(averageValueFromDealsLastYear)) + " SEK ("+comparedToLastYear +"% compared to " + str(datetime.today().year-2) + ")"})
-
-    #Data large for chart 
+    #Data to large chart 
     dealsList = []
     yearsList = []
     for i in range(6): 
         dealsList.append(getDeals(fromDate=str(datetime.today().year-i),splitMonths=True)[0])
         yearsList.append(datetime.today().year-i)
 
+    #Total value from deals 
+    previousYears = []
+    for i,deal in enumerate(deals): 
+        if i > 0:
+            previousYears.append(str(formatNumber(round(deal[1]))) + " SEK (" + str(yearsList[i+1])+")")
+    labelsAndDataDict.append({'data': 'Total value of deals','value':str(formatNumber(deals[0][1])) + " SEK "})
+    labelsAndDataDict.append({'data':"Not used","value":previousYears})
+
+    #Add average deal value to dict
+    previousYears = []
+    for i,deal in enumerate(deals): 
+        if i > 0:
+            previousYears.append(str(formatNumber(round(float(deal[2])))) + " SEK (" + str(yearsList[i+1])+")")
+    labelsAndDataDict.append({'data': 'Average value of deals','value':str(formatNumber(deals[0][2])) + " SEK "})
+    labelsAndDataDict.append({'data':"Not used","value":previousYears})
+
 
     #Deal value for each customer last year and building data to small chart 
-    smallChart = [] #Contains company names and revenue 
-    temp = [] #Used temporarily store the list of costumers and revenues 
+    smallChart = [] #Contains company names and revenue for chart [year][company][name/value]
     customerRevenueDict = [] #List of dictionaries containing customers and revenue each year 
-    for in in range(6): 
-    valuePerCompany = getCompanies(True)[4]
-    
-    for i,entry in enumerate(valuePerCompany): 
-        temp.append(entry + ": " +str(formatNumber(valuePerCompany[entry])))
+    for i in range(6): 
+        temp = [] #Used temporarily store the list of costumers and revenues 
+        valuePerCompany = getCompanies(True,offset=i)[4]
         smallChart.append([])
-        smallChart[-1].append(entry)
-        smallChart[-1].append(valuePerCompany[entry])
-    valuePerCompany = temp
+        
+        for k,entry in enumerate(valuePerCompany): 
+            temp.append(entry + ": " +str(formatNumber(valuePerCompany[entry])))
+            smallChart[i].append([])
+            smallChart[i][-1].append(entry)
+            smallChart[i][-1].append(valuePerCompany[entry])
+        valuePerCompany = temp
 
-    labelsAndDataDict.append({'data': 'Deal value of all customers','value':valuePerCompany})
+        customerRevenueDict.append({'data': 'Deal value of all customers','value':valuePerCompany})
 
-
-    return render_template('deals.html',items=labelsAndDataDict,dealsList = dealsList, upt = updatedTime, yearsList = yearsList,smallChart = smallChart) #, revenueList = revenueList
+    return render_template('deals.html',items=labelsAndDataDict,dealsList = dealsList, upt = updatedTime, yearsList = yearsList,smallChart = smallChart, customerRevenue = customerRevenueDict) #, revenueList = revenueList
 
 #Deals page 
 @app.route('/companies')
 def companies():
+    print("------------companies page loading------------")
     #Find customers and rest 
     toWebpage = []
     comps = getCompanies(True)[0:4]
 
-    #print(comps)
-
     for group in comps: 
         companiesString = []
         for company in group: 
-            #print(company)
             companiesString.append(company['name'])
         toWebpage.append({'Title':"Customers",'companies': companiesString})
 
+    if len(toWebpage) > 3: 
+        toWebpage[1]['Title'] = "Prospects"
+        toWebpage[2]['Title'] = "Inactives"
+        toWebpage[3]['Title'] = "Others/Not interested"
 
-    toWebpage[1]['Title'] = "Prospects"
-    toWebpage[2]['Title'] = "Inactives"
-    toWebpage[3]['Title'] = "Others/Not interested"
-
-    return render_template('companies.html',items=toWebpage, upt = updatedTime) #,dealsList = dealsList
+    return render_template('companies.html',items=toWebpage, upt = updatedTime)
 
 
 # Example page

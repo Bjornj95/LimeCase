@@ -7,29 +7,36 @@
 	<div class="container">
 		<div class="row">
 		  <div class="col-xl">
-			<div class="jumbotron" style = "height:300px;">
+			<div class="jumbotron" style = "height:auto;">
 				<h5 style="text-align:center;">{{items[0].data}}</h5>
 				<hr class="my-4">
 				<h4 style="text-align:center;">{{items[0].value}}</h4>
+				{% for year in items[1].value %}
+				<h6 style="text-align:center; ">{{ year }}</h6>
+				{%endfor%}
 			  </div>
 		  </div>
 		  <div class="col-xl">
-			<div class="jumbotron" style = "height:300px;" style = "width:600px;">
-				<h5 style="text-align:center;">{{items[1].data}}</h5>
+			<div class="jumbotron" style = "height:auto;" style = "width:600px;">
+				<h5 style="text-align:center;">{{items[2].data}}</h5>
 				<hr class="my-4">
-				<h4 style="text-align:center;">{{items[1].value}}</h4>
+				<h4 style="text-align:center;">{{items[2].value}}</h4>
+				{% for year in items[3].value %}
+				<h6 style="text-align:center; ">{{ year }}</h6>
+				{%endfor%}
 			  </div>
 		  </div>
 		</div>
 		
-			<div class="jumbotron" style = "height:300px;">
+			<div class="jumbotron" style = "height:auto;">
+		
 				<div class = "row">
-					<div class="col-xl">
+					<div class="col-xl" id="customerCol">
 						
-							<h5 style="text-align:center;">{{items[2].data}}</h5>
+							<h5 style="text-align:center;">{{customerRevenue[0].data}}</h5>
 							<hr class="my-4">
-							{% for comp in items[2].value %}
-								<h4 style="text-align:left;">{{ comp }} SEK</h4>
+							{% for comp in customerRevenue[0].value %}
+								<h5 id="customers" style="text-align:left;">{{ comp }} SEK</h5>
 							{%endfor%}
 					</div>
 		  
@@ -40,9 +47,12 @@
 		  			</div>
 		  		</div>
 			</div>
+			
 
 
 		<div class="jumbotron">
+			<h5 style="text-align:center;">Number of closed deals</h5>
+			<hr class="my-4">
 
 			<button type="button" class="btn btn-primary" id="button0" onclick="year0()">{{yearsList[0]}}</button>
 			<button type="button" class="btn btn-primary" id="button1" onclick="year1()">{{yearsList[1]}}</button>
@@ -65,9 +75,9 @@
   
 		function drawChart() {
 		  var data = google.visualization.arrayToDataTable([['Customer', 'Value from closed deals (SEK)'],
-		  ['{{smallChart[0][0]}}',{{smallChart[0][1]}}]]);
+		  ['{{smallChart[0][0][0]}}',{{smallChart[0][0][1]}}]]);
 
-			{% for comp in smallChart %}
+			{% for comp in smallChart[0] %}
 				{% if loop.index != 1 %}
 					data.addRow(['{{comp[0]}}',{{comp[1]}}])
 				{% endif %}
@@ -389,6 +399,23 @@
 				document.getElementById("button5").style.color = "red";
 			}
 	</script>
+
+
+
+
+	<script>
+		function year1_2() {
+
+			let list = ""
+
+			{% for comp in customerRevenue[0].value %}
+				document.getElementById('customers').innerHTML = document.getElementById('customers').innerHTML + "{{ comp }}" 
+			{%endfor%}
+			
+			}
+	</script>
+
+
 
 
 
